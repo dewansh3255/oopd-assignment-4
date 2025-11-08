@@ -171,11 +171,16 @@ void findStudentsByGrade(const GradeIndex& index, const MixedCourseID& course, i
 }
 
 // --- Main Function ---
-int main() {
+int main(int argc, char* argv[]) {
     cout << "--- OOPD Assignment 4 ---" << endl;
 
-    vector<IIITD_Student> students = loadStudentsFromCSV("students.csv");
-    if (students.empty()) return 1;
+    string csv_filename = "students.csv"; // Default
+    if (argc > 1) {
+        csv_filename = argv[1]; // Use filename from command line
+    }
+    cout << "Loading student data from: " << csv_filename << endl;
+
+    vector<IIITD_Student> students = loadStudentsFromCSV(csv_filename);    if (students.empty()) return 1;
 
     // --- Q4: Show Original Order ---
     printStudents(students, "Original Order", 5);

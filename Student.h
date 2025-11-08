@@ -4,9 +4,9 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <ostream>
 
 // We declare three template "typename" parameters.
-// This lets us specify these types when we create a Student object.
 template <typename RollNoType, typename CourseIDType, typename GradeType>
 class Student {
 
@@ -53,7 +53,6 @@ public:
         return rollNumber;
     }
 
-
     const std::map<CourseIDType, GradeType>& getPreviousCourses() const {
         return previousCourses;
     }
@@ -63,5 +62,20 @@ public:
         return rollNumber < other.rollNumber;
     }
 };
+
+// --- Operator Overloading (outside class) ---
+/**
+ * @brief Overloads the << operator for easy printing of Student objects.
+ * @param os The output stream (e.g., std::cout).
+ * @param s The Student object to print.
+ * @return The output stream.
+ */
+template <typename RollNoType, typename CourseIDType, typename GradeType>
+std::ostream& operator<<(std::ostream& os, const Student<RollNoType, CourseIDType, GradeType>& s) {
+    // We use the public getters, so this function doesn't need to be
+    // a 'friend' of the Student class.
+    os << s.getName() << " (" << s.getRollNumber() << ")";
+    return os;
+}
 
 #endif // STUDENT_H
