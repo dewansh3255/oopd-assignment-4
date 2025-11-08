@@ -1,0 +1,10 @@
+# Executable
+university_erp
+
+# Object files
+*.o
+
+# Other build artifacts
+*.out
+*.exe
+*.csv
