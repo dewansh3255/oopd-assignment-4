@@ -13,36 +13,26 @@
 
 using namespace std;
 
-// --- Type Aliases (from Step 2) ---
+// --- Type Aliases ---
 using MixedCourseID = variant<string, int>;
 using IIITD_Student = Student<string, MixedCourseID, int>;
 
-// --- Global Mutex for Thread-Safe Logging (Q3) ---
-// This prevents threads from writing to cout at the same time
+// --- Global Mutex ---
 mutex cout_mutex;
 
-/**
- * @brief The worker function for each thread to sort a chunk of the vector.
- * @param begin Iterator to the start of the chunk
- * @param end Iterator to the end of the chunk
- * @param thread_id An ID for logging
- */
+// --- Thread Worker Function (from Step 3) ---
 void sort_chunk(vector<IIITD_Student>::iterator begin,
                 vector<IIITD_Student>::iterator end,
                 int thread_id) {
     
-    // Log start time
     auto start_time = chrono::high_resolution_clock::now();
-
-    { // Use lock_guard in a block to limit its scope
+    { 
         lock_guard<mutex> lock(cout_mutex);
         cout << "[Thread " << thread_id << "] Starting sort..." << endl;
     }
 
-    // --- The actual sorting ---
-    std::sort(begin, end); // std::sort uses the operator< we defined in Student.h
+    std::sort(begin, end); 
 
-    // Log end time
     auto end_time = chrono::high_resolution_clock::now();
     chrono::duration<double, milli> diff_ms = end_time - start_time;
 
@@ -53,11 +43,7 @@ void sort_chunk(vector<IIITD_Student>::iterator begin,
     }
 }
 
-/**
- * @brief Loads student records from a CSV file.
- * @param filename The path to the students.csv file
- * @return A vector of IIITD_Student objects
- */
+// --- CSV Loading Function (from Step 3) ---
 vector<IIITD_Student> loadStudentsFromCSV(const string& filename) {
     vector<IIITD_Student> students;
     ifstream file(filename);
@@ -68,18 +54,13 @@ vector<IIITD_Student> loadStudentsFromCSV(const string& filename) {
         return students;
     }
 
-    // Read the file line by line
     while (getline(file, line)) {
         stringstream ss(line);
         string name, roll, branch, year_str;
-
-        // Split the line by commas
         getline(ss, name, ',');
         getline(ss, roll, ',');
         getline(ss, branch, ',');
         getline(ss, year_str, ',');
-
-        // Create the student object and add it to the vector
         students.emplace_back(name, roll, branch, stoi(year_str));
     }
 
@@ -87,51 +68,53 @@ vector<IIITD_Student> loadStudentsFromCSV(const string& filename) {
     return students;
 }
 
-
-int main() {
-    cout << "--- Step 3: CSV Loading & Parallel Sorting ---" << endl;
-
-    // 1. Load 3000 records from the CSV file
-    vector<IIITD_Student> students = loadStudentsFromCSV("students.csv");
-
-    if (students.empty()) {
-        return 1; // Exit if loading failed
+// --- Print Function (NEW FOR STEP 4) ---
+/**
+ * @brief Prints the first 'count' students from a vector.
+ * @param students A read-only reference to the student vector.
+ * @param title A title to print for this section.
+ * @param count The number of students to print.
+ */
+void printStudents(const vector<IIITD_Student>& students, const string& title, int count = 5) {
+    cout << "\n--- " << title << " (First " << count << " Records) ---" << endl;
+        for(int i = 0; i < count && i < students.size(); ++i) {
+        cout << students[i].getRollNumber() << endl;
     }
+}
 
-    // --- Parallel Sorting ---
 
-    // Find the midpoint to split the vector
+// --- Main Function ---
+int main() {
+    cout << "--- Step 4: Displaying Records ---" << endl;
+
+    // 1. Load 3000 records
+    vector<IIITD_Student> students = loadStudentsFromCSV("students.csv");
+    if (students.empty()) return 1;
+
+    // 2. SHOW ORIGINAL ORDER
+    // This call uses a const_iterator to read the data
+    printStudents(students, "Original Order", 5); // <-- NEW
+
+    // 3. Parallel Sorting (from Step 3)
     size_t mid_point = students.size() / 2;
     auto mid_iter = students.begin() + mid_point;
 
     cout << "\nStarting parallel sort with 2 threads..." << endl;
-
-    // 2. Launch two threads
+    
+    // These calls use RandomAccessIterator (begin(), end()) to modify the data
     thread t1(sort_chunk, students.begin(), mid_iter, 1);
     thread t2(sort_chunk, mid_iter, students.end(), 2);
-
-    // 3. Wait for both threads to finish their work
     t1.join();
     t2.join();
-
     cout << "\nBoth threads have finished." << endl;
 
-    // 4. Merge the two sorted halves
-    // This part runs in the main thread
     cout << "Merging the two sorted halves..." << endl;
-    auto merge_start = chrono::high_resolution_clock::now();
-    
     inplace_merge(students.begin(), mid_iter, students.end());
-    
-    auto merge_end = chrono::high_resolution_clock::now();
-    chrono::duration<double, milli> merge_ms = merge_end - merge_start;
-    cout << "Merge completed in " << merge_ms.count() << " ms." << endl;
+    cout << "Merge completed." << endl;
 
-    // (We'll add the printing for Q4 in the next step)
-    cout << "\n--- Verification (First 5 Students after sort) ---" << endl;
-    for (int i = 0; i < 5; ++i) {
-        cout << students[i].getRollNumber() << endl;
-    }
+    // 4. SHOW SORTED ORDER
+    // This call ALSO uses a const_iterator to read the data
+    printStudents(students, "Sorted Order", 5); // <-- NEW
 
     return 0;
 }
