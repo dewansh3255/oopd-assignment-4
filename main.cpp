@@ -63,8 +63,15 @@ vector<IIITD_Student> loadStudentsFromCSV(const string& filename) {
         getline(ss, year_str, ',');
 
         // Create the student object
-        students.emplace_back(name, roll, branch, stoi(year_str));
-
+        int year = 0;
+        try {
+            year = stoi(year_str);
+        } catch (const std::invalid_argument& e) {
+            cerr << "Warning: Skipping malformed line. Invalid year: " << year_str << endl;
+            continue; // Skip this bad line
+        }
+        // Create the student object
+        students.emplace_back(name, roll, branch, year);
         // --- ADDING DUMMY GRADES ---
         // Get a reference to the student we just added
         IIITD_Student& newStudent = students.back();
@@ -159,8 +166,7 @@ void findStudentsByGrade(const GradeIndex& index, const MixedCourseID& course, i
         // 'gradeIt->first' is the grade (e.g., 9, 10)
         // 'gradeIt->second' is the vector<Student*>
         for (IIITD_Student* s : gradeIt->second) {
-            cout << "Found: " << s->getName() << " (" << s->getRollNumber() 
-                 << ") with grade " << gradeIt->first << endl;
+            cout << "Found: " << *s << " with grade " << gradeIt->first << endl;
             count++;
         }
     }
